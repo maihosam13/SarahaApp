@@ -1,8 +1,10 @@
 
 import { userModel } from "../../DB/models/user.model.js";
 import { errorRes } from "../../utils/error.handle.js";
-import { tokenEnum } from "../../middlewares/auth.middleware.js";
+import { decodeToken, tokenEnum } from "../../middlewares/auth.middleware.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import { compareHash, CreateHash } from "../../utils/security/hash.js";
 
 export const signupService = async ({firstName,lastName,email,password,gender,phone,bio,age, userName}) => {
 
@@ -20,7 +22,7 @@ export const signupService = async ({firstName,lastName,email,password,gender,ph
         });
     }
 
-    const user = await userModel.create({firstName,lastName,email,password,gender,phone,bio,age, userName});
+    const user = await userModel.create({firstName,lastName,email,password:await CreateHash(password),gender,phone,bio,age, userName});
 
     return {
         data: {
@@ -45,8 +47,9 @@ export const loginService = async (identifier, password) => {
             statusCode: 400
         });
     }
-
-    if (user.password != password) {
+ 
+    const IsPasswordMatch = await compareHash(password,user.password)
+    if (!IsPasswordMatch) {
         errorRes({
             msg: "invalid credentials",
             statusCode: 400
@@ -83,3 +86,17 @@ export const loginService = async (identifier, password) => {
     };
 };
 
+export const refreshToken = async (authorization)=>{
+    const {user} = await decodeToken({authorization,tokenType:tokenEnum.refresh})
+    const accessToken = jwt.sign({
+        _id:user._id,
+        email:user.email
+    },process.env.ACCESS_TOKEN_SECRET,{
+        expiresIn:"30M"
+    })
+    return{
+        data:{
+            accessToken
+        }
+    }
+}

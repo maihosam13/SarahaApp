@@ -42,16 +42,17 @@ const bootstrap = async()=>{
     
    app.use((err,req,res,next)=>{
     const statusCode =err.cause?.statusCode ||500
-    console.log(statusCode);
     
-    res.status(500).json({
+    
+    res.status(statusCode).json({
         errMsg:err.message,
-        status:statusCode
+        status:statusCode,
+        errOption: err.cause?.options
     });
 
 })
 
-     console.log(process.env.PORT);
+    //  console.log(process.env.PORT);
      
 
     app.listen(port,()=>console.log(chalk.green(`Example app listening on port ${port}!`)));
