@@ -5,7 +5,10 @@ import { DBconnection } from "./DB/DB.connection.js";
 import { GenderEnum, ProviderEnum } from "./modules/User/user.types.js";
 import { userModel } from "./DB/models/user.model.js";
 import { config } from "dotenv";
-
+import cors from 'cors'
+import { sendEmail } from "./utils/email/sendEmail.js";
+import { emailTemplate } from "./utils/email/emailTemplate.js";
+import {customAlphabet } from "nanoid";
 
 config({
     path:"./config/.env"
@@ -14,6 +17,13 @@ config({
 const bootstrap = async()=>{
     const app = express()
     const port = 3000
+
+    app.use(cors({
+        origin:"*"
+    }))
+
+
+
     app.use(express.json())
     
    await  DBconnection()
@@ -28,6 +38,11 @@ const bootstrap = async()=>{
     )
     })
     
+    
+
+    
+
+
     app.use(userRoutes.base,userRouter)
 
 //    await userModel.create({
@@ -39,6 +54,10 @@ const bootstrap = async()=>{
 
    
     
+
+
+app.use("/uploads",express.static("./uploads"))
+
     
    app.use((err,req,res,next)=>{
     const statusCode =err.cause?.statusCode ||500
