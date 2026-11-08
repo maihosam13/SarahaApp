@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken';
 import {userModel} from '../DB/models/user.model.js'
 import {errorRes} from '../../src/utils/error.handle.js'
+import { redisClient } from '../DB/redis.connect.js';
+import { userSessionJwtIdKey } from '../utils/redis-services.js';
+import { UserRefreshClient } from 'google-auth-library';
 
 export const tokenEnum = {
     access:"access",
@@ -8,9 +11,10 @@ export const tokenEnum = {
 }
 
 export const auth = async (req, res,next) => {
-   const {user} = await decodeToken({authorization:req.headers.authorization})
+   const {user,jti} = await decodeToken({authorization:req.headers.authorization})
 
     req.user = user
+    req.jti = jti
     next()
 }
 
@@ -51,35 +55,42 @@ export const decodeToken = async({authorization, tokenType = tokenEnum.access})=
         })
         
     }
-    return{
-        user
+     const { jti } = payload;
+
+    if (!jti) {
+        errorRes({
+            msg: "in-valid token",
+            statusCode: 400
+        });
     }
-}
 
+    const redisJti = await redisClient.get(
+        userSessionJwtIdKey(user._id, jti)
+    );
 
+    if (!redisJti) {
+        errorRes({
+            msg: "logged out log again",
+            statusCode: 400
+        });
+    }
 
+    return {
+        user,
+        jti
+    };
+};
 
-export const authorization =(...roles)=>{
-    return (req,res,next)=>{
-        console.log({roles,userRole:req.user.role});
-        
+export const authorization = (...roles) => {
+    return (req, res, next) => {
+
         if (!roles.includes(req.user.role)) {
             errorRes({
-                msg:"unAuthorization",
-                statusCode:401
-            })
-            
+                msg: "unAuthorization",
+                statusCode: 401
+            });
         }
-        
-        next()
+
+        next();
     }
-    
 }
-
-
-
-
-
-
-
-

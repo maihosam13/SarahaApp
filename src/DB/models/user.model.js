@@ -80,7 +80,7 @@ const userSchema = new Schema(
         type:Date
     },
     BlockedAt:Date ,
-   otp:otpSchema
+//    otp:otpSchema
 },
 {
     timestamps:true,

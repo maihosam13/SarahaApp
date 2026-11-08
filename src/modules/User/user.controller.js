@@ -8,7 +8,9 @@ import {
     googleLogin,
     confirmEmail,
     forgetPassSendOtp,
-    resetPassword
+    resetPassword,
+    resendConfirmEmailOtp,
+    logoutFromAllDevices
 } from "./user.services.js";
 import jwt, { decode } from "jsonwebtoken";
 import { userModel } from "../../DB/models/user.model.js";
@@ -32,7 +34,11 @@ export const routes={
     confirmEmail:"/confirm-email",
     forgetPass:"/forget-password",
     resetPassword:"/reset-password",
-    uploadFile:"/upload-file"
+    uploadFile:"/upload-file",
+    resendConfirmEmailOtp :"/resend-confirm-otp",
+    logoutFromAllDevices:"/logout-from-all-devices",
+    logoutFromOneDevice:"/logout-from-one-device",
+
 }
 
 
@@ -57,9 +63,6 @@ router.post(routes.login,async(req,res)=>{
     return successRes({res,data})
 
 })
-
-
-
 
 
 router.get(routes.hello,(req,res,next)=>{
@@ -142,11 +145,6 @@ router.patch(routes.resetPassword,validation(resetPasswordSchema),async(req,res)
 
 
 
-
-
-
-
-
 router.get(routes.uploadFile,auth,uploadFile("users").single("image"),async(req,res)=>{
    
     console.log({
@@ -164,6 +162,32 @@ router.get(routes.uploadFile,auth,uploadFile("users").single("image"),async(req,
 
     successRes({res})
 })
+
+
+router.post(routes.resendConfirmEmailOtp,async(req,res)=>{
+    const {email} = req.body
+    const {data} = await resendConfirmEmailOtp(email)
+
+    successRes({res , data})
+})
+
+router.post(routes.logoutFromOneDevice,auth,async(req,res)=>{
+    const userId = req.user._id
+    const jti = req.jti
+    await logoutFromOneDevice(userId,jti)
+    return successRes({
+        res
+    })
+})
+
+router.post(routes.logoutFromAllDevices,auth,async(req,res)=>{
+    const userId = req.user._id
+    await logoutFromAllDevices(userId)
+    return successRes({
+        res
+    })
+})
+
 
 export default router
 
